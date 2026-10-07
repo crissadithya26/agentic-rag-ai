@@ -219,7 +219,7 @@ function askAgent() {
   const question =
     document.getElementById("question").value.trim();
 
-  const document =
+  const file =
     document.getElementById("document").files[0];
 
   const status =
@@ -231,7 +231,7 @@ function askAgent() {
   const sources =
     document.getElementById("sources");
 
-  if (!document) {
+  if (!file) {
     status.innerText = "Please upload a document first.";
     return;
   }
