@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Agentic RAG AI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b0f19;
+      color: #ffffff;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 28px 8%;
+      border-bottom: 1px solid #202638;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .authors {
+      color: #9ba4b5;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 70px auto;
+      padding: 0 25px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 45px;
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 72px);
+      margin-bottom: 18px;
+    }
+
+    .hero h1 span {
+      color: #8b7cff;
+    }
+
+    .hero p {
+      color: #aab2c2;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .card {
+      background: #121827;
+      border: 1px solid #252d40;
+      border-radius: 18px;
+      padding: 30px;
+      margin-bottom: 22px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    input[type="file"],
+    textarea {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid #30394f;
+      border-radius: 10px;
+      color: white;
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 15px;
+      background: #7567ff;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #6557ef;
+    }
+
+    .status {
+      margin-top: 18px;
+      color: #aab2c2;
+      font-size: 14px;
+    }
+
+    .answer {
+      min-height: 120px;
+      color: #dce2ef;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .sources {
+      color: #9fa8ba;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    footer {
+      text-align: center;
+      color: #687287;
+      padding: 40px 20px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Agentic RAG AI</div>
+  <div class="authors">
+    Adithya Vinod × Criss Chacko Chirayath Staby Chacko
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <h1>Ask your <span>documents.</span></h1>
+    <p>
+      An open-source Agentic Retrieval-Augmented Generation system
+      designed for intelligent retrieval, iterative reasoning,
+      and source-grounded answers.
+    </p>
+  </section>
+
+  <section class="card">
+
+    <label>1. Upload your document</label>
+
+    <input
+      type="file"
+      id="document"
+      accept=".pdf,.txt"
+    >
+
+    <label>2. Ask the Agentic RAG</label>
+
+    <textarea
+      id="question"
+      placeholder="Ask something about your document..."
+    ></textarea>
+
+    <button onclick="askAgent()">
+      Ask Agentic AI
+    </button>
+
+    <div class="status" id="status">
+      Ready.
+    </div>
+
+  </section>
+
+  <section class="card">
+
+    <label>AI Answer</label>
+
+    <div class="answer" id="answer">
+      Your grounded answer will appear here.
+    </div>
+
+  </section>
+
+  <section class="card">
+
+    <label>Sources</label>
+
+    <div class="sources" id="sources">
+      Retrieved document sources will appear here.
+    </div>
+
+  </section>
+
+</main>
+
+<footer>
+  Agentic RAG AI · Open Research Project · 2026
+  <br>
+  Adithya Vinod & Criss Chacko Chirayath Staby Chacko
+</footer>
+
+<script>
+
+function askAgent() {
+
+  const question =
+    document.getElementById("question").value.trim();
+
+  const document =
+    document.getElementById("document").files[0];
+
+  const status =
+    document.getElementById("status");
+
+  const answer =
+    document.getElementById("answer");
+
+  const sources =
+    document.getElementById("sources");
+
+  if (!document) {
+    status.innerText = "Please upload a document first.";
+    return;
+  }
+
+  if (!question) {
+    status.innerText = "Please enter a question.";
+    return;
+  }
+
+  status.innerText =
+    "Agent is preparing retrieval...";
+
+  answer.innerText =
+    "The AI backend will be connected in the next step.";
+
+  sources.innerText =
+    "Source retrieval will appear here once the Agentic RAG backend is connected.";
+
+}
+
+</script>
+
+</body>
+</html>
