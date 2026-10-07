@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -109,6 +110,11 @@
       background: #6557ef;
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .status {
       margin-top: 18px;
       color: #aab2c2;
@@ -126,6 +132,7 @@
       color: #9fa8ba;
       line-height: 1.7;
       font-size: 14px;
+      white-space: pre-wrap;
     }
 
     footer {
@@ -135,12 +142,14 @@
       font-size: 13px;
     }
   </style>
+
 </head>
 
 <body>
 
 <header>
   <div class="logo">Agentic RAG AI</div>
+
   <div class="authors">
     Adithya Vinod × Criss Chacko Chirayath Staby Chacko
   </div>
@@ -149,266 +158,437 @@
 <main>
 
   <section class="hero">
-    <h1>Ask your <span>documents.</span></h1>
-    <p>
-      An open-source Agentic Retrieval-Augmented Generation system
-      designed for intelligent retrieval, iterative reasoning,
-      and source-grounded answers.
-    </p>
-  </section>
 
-  <section class="card">
+```
+<h1>
+  Ask your <span>documents.</span>
+</h1>
 
-    <label>1. Upload your document</label>
-
-    <input
-      type="file"
-      id="document"
-      accept=".pdf,.txt"
-    >
-
-    <label>2. Ask the Agentic RAG</label>
-
-    <textarea
-      id="question"
-      placeholder="Ask something about your document..."
-    ></textarea>
-
-    <button onclick="askAgent()">
-      Ask Agentic AI
-    </button>
-
-    <div class="status" id="status">
-      Ready.
-    </div>
+<p>
+  An open-source Agentic Retrieval-Augmented Generation system
+  designed for intelligent retrieval, iterative reasoning,
+  and source-grounded answers.
+</p>
+```
 
   </section>
 
   <section class="card">
 
-    <label>AI Answer</label>
+```
+<label>1. Upload your document</label>
 
-    <div class="answer" id="answer">
-      Your grounded answer will appear here.
-    </div>
+<input
+  type="file"
+  id="document"
+  accept=".pdf,.txt"
+>
+
+
+<label>2. Ask the Agentic RAG</label>
+
+<textarea
+  id="question"
+  placeholder="Ask something about your document..."
+></textarea>
+
+
+<button
+  id="askButton"
+  onclick="askAgent()"
+>
+  Ask Agentic AI
+</button>
+
+
+<div
+  class="status"
+  id="status"
+>
+  Ready.
+</div>
+```
 
   </section>
 
   <section class="card">
 
-    <label>Sources</label>
+```
+<label>AI Answer</label>
 
-    <div class="sources" id="sources">
-      Retrieved document sources will appear here.
-    </div>
+<div
+  class="answer"
+  id="answer"
+>
+  Your grounded answer will appear here.
+</div>
+```
+
+  </section>
+
+  <section class="card">
+
+```
+<label>Sources</label>
+
+<div
+  class="sources"
+  id="sources"
+>
+  Retrieved document sources will appear here.
+</div>
+```
 
   </section>
 
 </main>
 
 <footer>
-  Agentic RAG AI · Open Research Project · 2026
+
+Agentic RAG AI · Open Research Project · 2026
+
   <br>
-  Adithya Vinod & Criss Chacko Chirayath Staby Chacko
+
+Adithya Vinod & Criss Chacko Chirayath Staby Chacko
+
 </footer>
 
 <script>
 
-function askAgent() {
+const API_URL =
+  "YOUR_BACKEND_URL/api/ask";
 
-  const question =
-    document.getElementById("question").value.trim();
 
-  const file =
-    document.getElementById("document").files[0];
+const questionInput =
+  document.getElementById("question");
 
-  const status =
-    document.getElementById("status");
+const documentInput =
+  document.getElementById("document");
 
-  const answer =
-    document.getElementById("answer");
+const statusElement =
+  document.getElementById("status");
 
-  const sources =
-    document.getElementById("sources");
+const answerElement =
+  document.getElementById("answer");
 
-  if (!file) {
-    status.innerText = "Please upload a document first.";
-    return;
-  }
+const sourcesElement =
+  document.getElementById("sources");
 
-  if (!question) {
-    status.innerText = "Please enter a question.";
-    return;
-  }
+const askButton =
+  document.getElementById("askButton");
 
-const PDFJS_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
-
-let pdfjsLib;
-
-async function loadPDFJS() {
-  if (!pdfjsLib) {
-    pdfjsLib = await import(PDFJS_URL);
-
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
-  }
-}
 
 async function extractPDF(file) {
-  await loadPDFJS();
 
-  const arrayBuffer = await file.arrayBuffer();
+  const PDFJS_URL =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
 
-  const pdf = await pdfjsLib.getDocument({
-    data: arrayBuffer
-  }).promise;
+  const pdfjsLib =
+    await import(PDFJS_URL);
 
-  let pages = [];
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
+  const arrayBuffer =
+    await file.arrayBuffer();
 
-    const text = content.items
-      .map(item => item.str)
-      .join(" ");
+  const pdf =
+    await pdfjsLib.getDocument({
+      data: arrayBuffer
+    }).promise;
+
+  const pages = [];
+
+  for (
+    let pageNumber = 1;
+    pageNumber <= pdf.numPages;
+    pageNumber++
+  ) {
+
+    const page =
+      await pdf.getPage(pageNumber);
+
+    const content =
+      await page.getTextContent();
+
+    const text =
+      content.items
+        .map(item => item.str)
+        .join(" ");
 
     pages.push({
-      page: i,
+      page: pageNumber,
       text: text
     });
+
   }
 
   return pages;
 }
 
-function findRelevantPages(pages, question) {
 
-  const words = question
-    .toLowerCase()
-    .split(/\W+/)
-    .filter(word => word.length > 3);
+function findRelevantPages(
+  pages,
+  question
+) {
 
-  const results = pages.map(page => {
+  const words =
+    question
+      .toLowerCase()
+      .split(/\W+/)
+      .filter(word => word.length > 3);
 
-    const text = page.text.toLowerCase();
 
-    let score = 0;
+  const results =
+    pages.map(page => {
 
-    words.forEach(word => {
-      if (text.includes(word)) {
-        score++;
-      }
+      const text =
+        page.text.toLowerCase();
+
+      let score = 0;
+
+      words.forEach(word => {
+
+        if (text.includes(word)) {
+          score++;
+        }
+
+      });
+
+      return {
+        page: page.page,
+        text: page.text,
+        score: score
+      };
+
     });
 
-    return {
-      ...page,
-      score: score
-    };
-
-  });
 
   return results
     .filter(page => page.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .sort(
+      (a, b) =>
+        b.score - a.score
+    )
+    .slice(0, 5);
 }
+
 
 async function askAgent() {
 
   const question =
-    document.getElementById("question").value.trim();
+    questionInput.value.trim();
 
   const file =
-    document.getElementById("document").files[0];
+    documentInput.files[0];
 
-  const status =
-    document.getElementById("status");
-
-  const answer =
-    document.getElementById("answer");
-
-  const sources =
-    document.getElementById("sources");
 
   if (!file) {
-    status.innerText =
+
+    statusElement.innerText =
       "Please upload a PDF first.";
+
     return;
   }
 
+
   if (!question) {
-    status.innerText =
+
+    statusElement.innerText =
       "Please enter a question.";
+
     return;
   }
+
 
   try {
 
-    status.innerText =
-      "Reading your PDF...";
+    askButton.disabled = true;
 
-    answer.innerText = "";
+    statusElement.innerText =
+      "Reading your document...";
 
-    sources.innerText = "";
+    answerElement.innerText =
+      "";
 
-    const pages =
-      await extractPDF(file);
+    sourcesElement.innerText =
+      "";
 
-    status.innerText =
-      "Searching the document...";
 
-    const relevant =
-      findRelevantPages(pages, question);
+    let pages;
 
-    if (relevant.length === 0) {
 
-      status.innerText =
-        "No relevant information found.";
+    if (
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf")
+    ) {
 
-      answer.innerText =
-        "I could not find relevant information in the uploaded document.";
+      pages =
+        await extractPDF(file);
 
-      sources.innerText =
-        "No matching document sources found.";
+    } else {
 
-      return;
+      const text =
+        await file.text();
+
+      pages = [
+        {
+          page: 1,
+          text: text
+        }
+      ];
+
     }
 
-    status.innerText =
-      "Retrieval completed.";
 
-    const bestPage =
-      relevant[0];
+    statusElement.innerText =
+      "Retrieving relevant information...";
 
-    answer.innerText =
-      "Relevant information was found in the uploaded document.\n\n" +
-      bestPage.text.substring(0, 1500);
 
-    sources.innerText =
-      relevant
+    const relevantPages =
+      findRelevantPages(
+        pages,
+        question
+      );
+
+
+    if (
+      relevantPages.length === 0
+    ) {
+
+      statusElement.innerText =
+        "No relevant information found.";
+
+      answerElement.innerText =
+        "I could not find information relevant to your question in the uploaded document.";
+
+      sourcesElement.innerText =
+        "No matching sources were retrieved.";
+
+      return;
+
+    }
+
+
+    statusElement.innerText =
+      "Agent is reasoning over the retrieved context...";
+
+
+    const context =
+      relevantPages
         .map(page =>
-          "📄 Page " + page.page +
-          " — retrieval score: " +
-          page.score
+          `PAGE ${page.page}\n${page.text}`
         )
-        .join("\n");
+        .join("\n\n");
+
+
+    const response =
+      await fetch(
+        API_URL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            question:
+              question,
+
+            context:
+              context,
+
+            sources:
+              relevantPages.map(
+                page => page.page
+              )
+
+          })
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Backend request failed."
+      );
+
+    }
+
+
+    const data =
+      await response.json();
+
+
+    statusElement.innerText =
+      "Agentic RAG completed.";
+
+
+    answerElement.innerText =
+      data.answer ||
+      "No answer was returned.";
+
+
+    if (
+      data.sources &&
+      data.sources.length
+    ) {
+
+      sourcesElement.innerText =
+        data.sources
+          .map(
+            source =>
+              "📄 Page " +
+              source.page +
+              " — " +
+              source.reason
+          )
+          .join("\n");
+
+    } else {
+
+      sourcesElement.innerText =
+        relevantPages
+          .map(
+            page =>
+              "📄 Page " +
+              page.page +
+              " — retrieved context"
+          )
+          .join("\n");
+
+    }
+
 
   } catch (error) {
 
     console.error(error);
 
-    status.innerText =
-      "Error reading the PDF.";
 
-    answer.innerText =
-      "The PDF could not be processed.";
+    statusElement.innerText =
+      "Something went wrong.";
 
-    sources.innerText =
+
+    answerElement.innerText =
+      "The Agentic RAG system could not process the request.";
+
+
+    sourcesElement.innerText =
       error.message;
+
+
+  } finally {
+
+    askButton.disabled = false;
+
   }
+
 }
+
 </script>
 
 </body>
