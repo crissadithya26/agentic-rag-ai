@@ -241,17 +241,174 @@ function askAgent() {
     return;
   }
 
-  status.innerText =
-    "Agent is preparing retrieval...";
+const PDFJS_URL =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
 
-  answer.innerText =
-    "The AI backend will be connected in the next step.";
+let pdfjsLib;
 
-  sources.innerText =
-    "Source retrieval will appear here once the Agentic RAG backend is connected.";
+async function loadPDFJS() {
+  if (!pdfjsLib) {
+    pdfjsLib = await import(PDFJS_URL);
 
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+  }
 }
 
+async function extractPDF(file) {
+  await loadPDFJS();
+
+  const arrayBuffer = await file.arrayBuffer();
+
+  const pdf = await pdfjsLib.getDocument({
+    data: arrayBuffer
+  }).promise;
+
+  let pages = [];
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+
+    const text = content.items
+      .map(item => item.str)
+      .join(" ");
+
+    pages.push({
+      page: i,
+      text: text
+    });
+  }
+
+  return pages;
+}
+
+function findRelevantPages(pages, question) {
+
+  const words = question
+    .toLowerCase()
+    .split(/\W+/)
+    .filter(word => word.length > 3);
+
+  const results = pages.map(page => {
+
+    const text = page.text.toLowerCase();
+
+    let score = 0;
+
+    words.forEach(word => {
+      if (text.includes(word)) {
+        score++;
+      }
+    });
+
+    return {
+      ...page,
+      score: score
+    };
+
+  });
+
+  return results
+    .filter(page => page.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+}
+
+async function askAgent() {
+
+  const question =
+    document.getElementById("question").value.trim();
+
+  const file =
+    document.getElementById("document").files[0];
+
+  const status =
+    document.getElementById("status");
+
+  const answer =
+    document.getElementById("answer");
+
+  const sources =
+    document.getElementById("sources");
+
+  if (!file) {
+    status.innerText =
+      "Please upload a PDF first.";
+    return;
+  }
+
+  if (!question) {
+    status.innerText =
+      "Please enter a question.";
+    return;
+  }
+
+  try {
+
+    status.innerText =
+      "Reading your PDF...";
+
+    answer.innerText = "";
+
+    sources.innerText = "";
+
+    const pages =
+      await extractPDF(file);
+
+    status.innerText =
+      "Searching the document...";
+
+    const relevant =
+      findRelevantPages(pages, question);
+
+    if (relevant.length === 0) {
+
+      status.innerText =
+        "No relevant information found.";
+
+      answer.innerText =
+        "I could not find relevant information in the uploaded document.";
+
+      sources.innerText =
+        "No matching document sources found.";
+
+      return;
+    }
+
+    status.innerText =
+      "Retrieval completed.";
+
+    const bestPage =
+      relevant[0];
+
+    answer.innerText =
+      "Relevant information was found in the uploaded document.\n\n" +
+      bestPage.text.substring(0, 1500);
+
+    sources.innerText =
+      relevant
+        .map(page =>
+          "📄 Page " + page.page +
+          " — retrieval score: " +
+          page.score
+        )
+        .join("\n");
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.innerText =
+      "Error reading the PDF.";
+
+    answer.innerText =
+      "The PDF could not be processed.";
+
+    sources.innerText =
+      error.message;
+  }
+}
 </script>
 
 </body>
