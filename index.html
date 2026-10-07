@@ -148,11 +148,15 @@
 <body>
 
 <header>
-  <div class="logo">Agentic RAG AI</div>
+
+  <div class="logo">
+    Agentic RAG AI
+  </div>
 
   <div class="authors">
     Adithya Vinod × Criss Chacko Chirayath Staby Chacko
   </div>
+
 </header>
 
 <main>
@@ -176,7 +180,9 @@
   <section class="card">
 
 ```
-<label>1. Upload your document</label>
+<label>
+  1. Upload your document
+</label>
 
 <input
   type="file"
@@ -185,7 +191,9 @@
 >
 
 
-<label>2. Ask the Agentic RAG</label>
+<label>
+  2. Ask the Agentic RAG
+</label>
 
 <textarea
   id="question"
@@ -214,7 +222,9 @@
   <section class="card">
 
 ```
-<label>AI Answer</label>
+<label>
+  AI Answer
+</label>
 
 <div
   class="answer"
@@ -229,7 +239,9 @@
   <section class="card">
 
 ```
-<label>Sources</label>
+<label>
+  Sources
+</label>
 
 <div
   class="sources"
@@ -255,6 +267,16 @@ Adithya Vinod & Criss Chacko Chirayath Staby Chacko
 
 <script>
 
+/*
+  IMPORTANT
+
+  This is the future Gemini backend address.
+
+  Do NOT put your Gemini API key here.
+
+  We will replace this after the backend is deployed.
+*/
+
 const API_URL =
   "YOUR_BACKEND_URL/api/ask";
 
@@ -278,16 +300,43 @@ const askButton =
   document.getElementById("askButton");
 
 
-async function extractPDF(file) {
+/*
+  PDF.JS
+  Version 3.11.174 is used for compatibility.
+*/
 
-  const PDFJS_URL =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+const PDFJS_URL =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.mjs";
 
-  const pdfjsLib =
+const PDF_WORKER_URL =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+
+let pdfjsLib = null;
+
+
+async function loadPDFJS() {
+
+  if (pdfjsLib) {
+    return;
+  }
+
+  pdfjsLib =
     await import(PDFJS_URL);
 
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+    PDF_WORKER_URL;
+
+}
+
+
+/*
+  Extract text from PDF
+*/
+
+async function extractPDF(file) {
+
+  await loadPDFJS();
 
   const arrayBuffer =
     await file.arrayBuffer();
@@ -297,7 +346,9 @@ async function extractPDF(file) {
       data: arrayBuffer
     }).promise;
 
+
   const pages = [];
+
 
   for (
     let pageNumber = 1;
@@ -308,24 +359,39 @@ async function extractPDF(file) {
     const page =
       await pdf.getPage(pageNumber);
 
+
     const content =
       await page.getTextContent();
+
 
     const text =
       content.items
         .map(item => item.str)
         .join(" ");
 
+
     pages.push({
+
       page: pageNumber,
+
       text: text
+
     });
 
   }
 
+
   return pages;
+
 }
 
+
+/*
+  Basic document retrieval
+
+  This finds pages that contain
+  words related to the question.
+*/
 
 function findRelevantPages(
   pages,
@@ -336,7 +402,9 @@ function findRelevantPages(
     question
       .toLowerCase()
       .split(/\W+/)
-      .filter(word => word.length > 3);
+      .filter(
+        word => word.length > 3
+      );
 
 
   const results =
@@ -345,7 +413,9 @@ function findRelevantPages(
       const text =
         page.text.toLowerCase();
 
+
       let score = 0;
+
 
       words.forEach(word => {
 
@@ -355,29 +425,45 @@ function findRelevantPages(
 
       });
 
+
       return {
+
         page: page.page,
+
         text: page.text,
+
         score: score
+
       };
 
     });
 
 
   return results
-    .filter(page => page.score > 0)
+
+    .filter(
+      page => page.score > 0
+    )
+
     .sort(
       (a, b) =>
         b.score - a.score
     )
+
     .slice(0, 5);
+
 }
 
+
+/*
+  Main Agentic RAG function
+*/
 
 async function askAgent() {
 
   const question =
     questionInput.value.trim();
+
 
   const file =
     documentInput.files[0];
@@ -389,6 +475,7 @@ async function askAgent() {
       "Please upload a PDF first.";
 
     return;
+
   }
 
 
@@ -398,6 +485,7 @@ async function askAgent() {
       "Please enter a question.";
 
     return;
+
   }
 
 
@@ -405,44 +493,64 @@ async function askAgent() {
 
     askButton.disabled = true;
 
+
     statusElement.innerText =
       "Reading your document...";
+
 
     answerElement.innerText =
       "";
 
+
     sourcesElement.innerText =
       "";
 
+
+    /*
+      STEP 1
+      Extract document
+    */
 
     let pages;
 
 
     if (
       file.type === "application/pdf" ||
-      file.name.toLowerCase().endsWith(".pdf")
+      file.name
+        .toLowerCase()
+        .endsWith(".pdf")
     ) {
 
       pages =
         await extractPDF(file);
 
-    } else {
+    }
+
+    else {
 
       const text =
         await file.text();
 
+
       pages = [
+
         {
           page: 1,
           text: text
         }
+
       ];
 
     }
 
 
+    /*
+      STEP 2
+      Retrieve relevant pages
+    */
+
     statusElement.innerText =
-      "Retrieving relevant information...";
+      "Searching your document...";
 
 
     const relevantPages =
@@ -452,6 +560,10 @@ async function askAgent() {
       );
 
 
+    /*
+      No retrieval result
+    */
+
     if (
       relevantPages.length === 0
     ) {
@@ -459,54 +571,129 @@ async function askAgent() {
       statusElement.innerText =
         "No relevant information found.";
 
+
       answerElement.innerText =
         "I could not find information relevant to your question in the uploaded document.";
 
+
       sourcesElement.innerText =
-        "No matching sources were retrieved.";
+        "No matching document sources were found.";
+
 
       return;
 
     }
 
 
+    /*
+      STEP 3
+      Prepare context for Gemini
+    */
+
     statusElement.innerText =
-      "Agent is reasoning over the retrieved context...";
+      "Preparing retrieved context...";
 
 
     const context =
       relevantPages
+
         .map(page =>
-          `PAGE ${page.page}\n${page.text}`
+
+          "PAGE " +
+          page.page +
+          "\n" +
+          page.text
+
         )
+
         .join("\n\n");
 
+
+    /*
+      STEP 4
+      Send retrieved context
+      to the Gemini backend
+    */
+
+    statusElement.innerText =
+      "Agent is reasoning over the document...";
+
+
+    /*
+      The backend will be connected
+      in the next step.
+
+      We intentionally stop here
+      until the backend exists.
+    */
+
+
+    if (
+      API_URL ===
+      "YOUR_BACKEND_URL/api/ask"
+    ) {
+
+      statusElement.innerText =
+        "Document retrieval completed.";
+
+
+      answerElement.innerText =
+        "The document was successfully retrieved. Gemini AI will be connected in the next step.";
+
+
+      sourcesElement.innerText =
+        relevantPages
+
+          .map(page =>
+            "📄 Page " +
+            page.page +
+            " — retrieval score: " +
+            page.score
+          )
+
+          .join("\n");
+
+
+      return;
+
+    }
+
+
+    /*
+      STEP 5
+      Call backend
+    */
 
     const response =
       await fetch(
         API_URL,
         {
+
           method: "POST",
 
           headers: {
+
             "Content-Type":
               "application/json"
+
           },
 
-          body: JSON.stringify({
+          body:
+            JSON.stringify({
 
-            question:
-              question,
+              question:
+                question,
 
-            context:
-              context,
+              context:
+                context,
 
-            sources:
-              relevantPages.map(
-                page => page.page
-              )
+              sources:
+                relevantPages.map(
+                  page => page.page
+                )
 
-          })
+            })
+
         }
       );
 
@@ -524,6 +711,11 @@ async function askAgent() {
       await response.json();
 
 
+    /*
+      STEP 6
+      Display Gemini answer
+    */
+
     statusElement.innerText =
       "Agentic RAG completed.";
 
@@ -533,38 +725,55 @@ async function askAgent() {
       "No answer was returned.";
 
 
+    /*
+      STEP 7
+      Display sources
+    */
+
     if (
       data.sources &&
-      data.sources.length
+      data.sources.length > 0
     ) {
 
       sourcesElement.innerText =
+
         data.sources
-          .map(
-            source =>
-              "📄 Page " +
-              source.page +
-              " — " +
-              source.reason
+
+          .map(source =>
+
+            "📄 Page " +
+            source.page +
+            " — " +
+            source.reason
+
           )
+
           .join("\n");
 
-    } else {
+    }
+
+    else {
 
       sourcesElement.innerText =
+
         relevantPages
-          .map(
-            page =>
-              "📄 Page " +
-              page.page +
-              " — retrieved context"
+
+          .map(page =>
+
+            "📄 Page " +
+            page.page +
+            " — retrieved context"
+
           )
+
           .join("\n");
 
     }
 
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     console.error(error);
 
@@ -580,8 +789,10 @@ async function askAgent() {
     sourcesElement.innerText =
       error.message;
 
+  }
 
-  } finally {
+
+  finally {
 
     askButton.disabled = false;
 
